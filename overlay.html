@@ -7,10 +7,10 @@
 html,body{margin:0;padding:0;background:transparent!important;overflow:hidden;width:100vw;height:100vh}
 *{box-sizing:border-box}
 body{font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
-#bug{position:fixed;width:calc(36vw * var(--k,1));font-size:calc(1vw * var(--k,1));opacity:0;transform:translateY(1.5em);transition:opacity .4s,transform .4s}
+#bug{position:fixed;width:calc(27vw * var(--k,1));font-size:calc(.75vw * var(--k,1));opacity:0;transform:translateY(1.5em);transition:opacity .4s,transform .4s}
 #bug.on{opacity:1;transform:none}
 .bl{left:2.2vw;bottom:2.6vw}.br{right:2.2vw;bottom:2.6vw}.tl{left:2.2vw;top:2.6vw}.tr{right:2.2vw;top:2.6vw}
-.bc{left:50%;bottom:2.6vw;margin-left:calc(-18vw * var(--k,1))}
+.bc{left:50%;bottom:2.6vw;transform:translateX(-50%)}#bug.bc{transform:translate(-50%,1.5em)}#bug.bc.on{transform:translateX(-50%)}
 .card{background:linear-gradient(180deg,rgba(13,36,54,.94),rgba(7,21,33,.94));border:.18em solid #c9a24a;border-radius:1em;overflow:hidden;box-shadow:0 .5em 1.6em rgba(0,0,0,.45)}
 .top{display:flex;align-items:center;gap:.7em;padding:.55em .9em;background:linear-gradient(90deg,#c9a24a,#f3d58a 60%,#c9a24a);color:#0b2233}
 .top img{width:2.4em;height:2.4em;border-radius:50%;flex:none;box-shadow:0 0 0 .12em #0b2233}
@@ -29,6 +29,24 @@ body{font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-fon
 .pts small{font-size:.42em;color:#9fb6c6;font-weight:600;margin-left:.1em}
 .ft{display:flex;flex-wrap:wrap;gap:.3em 1.2em;padding:.5em .9em .6em;font-size:1.3em;color:#9fb6c6;border-top:.08em solid rgba(255,255,255,.08)}
 .ft b{color:#eef3f6}.ft .run{color:#f3d58a}
+
+/* ---- slim one-line bar (?style=bar) ---- */
+#bug.bar{width:auto;max-width:96vw;font-size:calc(.9vw * var(--k,1))}
+.sl{display:flex;align-items:stretch;height:3.6em;border-radius:.7em;overflow:hidden;border:.15em solid #c9a24a;box-shadow:0 .4em 1.2em rgba(0,0,0,.45);background:rgba(7,21,33,.94);color:#eef3f6;white-space:nowrap}
+.sl .lg{display:flex;align-items:center;gap:.45em;padding:0 .7em;background:linear-gradient(90deg,#c9a24a,#f3d58a);color:#0b2233;font-weight:800;font-size:1.05em}
+.sl .lg img{width:2.4em;height:2.4em;border-radius:50%}
+.sl .lg i{width:.55em;height:.55em;border-radius:50%;background:#d4202a;animation:bl 1.2s infinite}
+.sl .pl{display:flex;align-items:center;gap:.5em;padding:0 .8em;font-size:1.45em;font-weight:700;max-width:22em}
+.sl .pl .nm{overflow:hidden;text-overflow:ellipsis}
+.sl .pl.act{background:rgba(243,213,138,.14)}
+.sl .pl .ar{color:#f3d58a;visibility:hidden}.sl .pl.act .ar{visibility:visible}
+.sl .pl.win .nm{color:#3fd08a}
+.sl .sc{display:flex;align-items:center;gap:.35em;padding:0 .8em;background:#0b2233;border-left:.1em solid #c9a24a;border-right:.1em solid #c9a24a;font-weight:800;font-size:2em;font-variant-numeric:tabular-nums}
+.sl .sc small{font-size:.45em;color:#9fb6c6;font-weight:600}
+.sl .sc em{font-style:normal;color:#c9a24a;font-size:.7em}
+.sl .dots i{width:.75em;height:.75em}
+.sl .inf{display:flex;align-items:center;gap:.9em;padding:0 .9em;font-size:1.15em;color:#9fb6c6;border-left:.08em solid rgba(255,255,255,.12)}
+.sl .inf b{color:#eef3f6}.sl .inf .run{color:#f3d58a}
 #msg{position:fixed;left:1vw;top:1vw;font:14px sans-serif;color:#fff;background:rgba(200,0,0,.8);padding:6px 10px;border-radius:6px;display:none}
 </style></head>
 <body>
@@ -43,7 +61,8 @@ var APP_URL = 'https://script.google.com/macros/s/AKfycbzRCisHxcmZhCY998S4unG7rO
   var q = {}; location.search.replace(/^\?/,'').split('&').forEach(function(p){ if(!p) return; var i=p.indexOf('='); q[decodeURIComponent(i<0?p:p.slice(0,i))] = i<0?'1':decodeURIComponent(p.slice(i+1)); });
   var url = q.u || APP_URL, bug = document.getElementById('bug'), msg = document.getElementById('msg');
   var pos = /^(bl|br|tl|tr|bc)$/.test(q.pos||'') ? q.pos : 'bl';
-  bug.className = pos; if (q.size) bug.style.setProperty('--k', Math.max(.5, Math.min(2.5, (+q.size||100)/100)));
+  var BAR = q.style === 'bar'; if (BAR && !q.pos) pos = 'bc';
+  bug.className = pos + (BAR ? ' bar' : ''); if (q.size) bug.style.setProperty('--k', Math.max(.5, Math.min(2.5, (+q.size||100)/100)));
   var EVERY = Math.max(2, +q.every || 3) * 1000, cbn = 0, last = '';
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -53,8 +72,20 @@ var APP_URL = 'https://script.google.com/macros/s/AKfycbzRCisHxcmZhCY998S4unG7rO
     return '<div class="row'+(o.act===s && !o.done?' act':'')+(win?' win':'')+'"><span class="ar">▶</span><span class="n">'+esc(a?o.a:o.b)+'</span>'+
       '<span class="dots">'+dots(a?o.sa:o.sb)+'</span><span class="pts">'+(a?o.pa:o.pb)+'<small>/'+(a?o.ta:o.tb)+'</small></span></div>';
   }
+  function drawBar(o){
+    function pl(s){
+      var a = s==='A', win = o.done && (a ? o.sa>o.sb : o.sb>o.sa);
+      var nm = '<span class="nm">'+esc(a?o.a:o.b)+'</span>', d = '<span class="dots">'+dots(a?o.sa:o.sb)+'</span>', ar = '<span class="ar">▶</span>';
+      return '<div class="pl'+(o.act===s && !o.done?' act':'')+(win?' win':'')+'">'+(a ? ar+nm+d : d+nm+ar)+'</div>';
+    }
+    var inf = o.done ? '<span><b>Τέλος</b></span>' : (o.set ? '<span>Σετ <b>'+o.set+'</b></span><span>Ιστ. <b>'+o.inn+'</b>/'+o.lim+'</span>'+(o.run?'<span class="run">Στεκιά <b>'+o.run+'</b></span>':'') : '<span>Διάλειμμα</span>');
+    bug.innerHTML = '<div class="sl"><div class="lg"><img src="'+LOGO+'" alt=""><i></i>LIVE</div>'+pl('A')+
+      '<div class="sc">'+o.pa+'<small>/'+o.ta+'</small><em>–</em>'+o.pb+'<small>/'+o.tb+'</small></div>'+pl('B')+'<div class="inf">'+inf+'</div></div>';
+    bug.classList.add('on');
+  }
   function draw(o){
     if (!o){ bug.classList.remove('on'); return; }
+    if (BAR) return drawBar(o);
     var ft = o.done ? '<span><b>Τέλος αγώνα</b> · Σετ <b>'+o.sa+'–'+o.sb+'</b></span>'
       : (o.set ? '<span>Σετ <b>'+o.set+'</b></span><span>Ιστορίες <b>'+o.inn+'</b>/'+o.lim+'</span>' + (o.fin?'<span class="run">Ισοφάριση</span>':'') + (o.run?'<span class="run">Στεκιά <b>'+o.run+'</b></span>':'')
                : '<span>Ανάμεσα στα σετ · <b>'+o.sa+'–'+o.sb+'</b></span>');
