@@ -63,7 +63,7 @@ var APP_URL = 'https://script.google.com/macros/s/AKfycbzRCisHxcmZhCY998S4unG7rO
   var pos = /^(bl|br|tl|tr|bc)$/.test(q.pos||'') ? q.pos : 'bl';
   var BAR = q.style === 'bar'; if (BAR && !q.pos) pos = 'bc';
   bug.className = pos + (BAR ? ' bar' : ''); if (q.size) bug.style.setProperty('--k', Math.max(.5, Math.min(2.5, (+q.size||100)/100)));
-  var EVERY = Math.max(2, +q.every || 3) * 1000, cbn = 0, last = '', fails = 0;
+  var EVERY = Math.max(2, +q.every || 3) * 1000, cbn = 0, last = '', fails = 0, mode = '';
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function dots(n){ var h=''; for (var i=0;i<2;i++) h += '<i'+(i<n?' class="on"':'')+'></i>'; return h; }
@@ -101,7 +101,7 @@ var APP_URL = 'https://script.google.com/macros/s/AKfycbzRCisHxcmZhCY998S4unG7rO
     return list.slice().sort(function(x,y){ return (y.upd||0)-(x.upd||0); })[0];
   }
   function got(d){
-    msg.style.display='none'; fails = 0;
+    if (!q.debug) msg.style.display='none'; fails = 0;
     var o = pick(d && d.live), key = JSON.stringify(o);
     if (key !== last){ last = key; draw(o); }
   }
@@ -111,12 +111,28 @@ var APP_URL = 'https://script.google.com/macros/s/AKfycbzRCisHxcmZhCY998S4unG7rO
       var t = Math.floor(Date.now()/3000)%6;
       return got({live:[{id:'W2-1',no:7,title:'3-Cushion Chania',a:'ΠΕΤΡΟΥΛΑΚΗΣ Κ.',b:'ΜΑΡΚΟΥΛΑΚΗΣ Ν.',pa:8+t,pb:11,ta:15,tb:15,sa:0,sb:1,set:2,inn:14+t,lim:35,act:'A',run:t,prev:['11–15'],upd:1}]});
     }
+    var base = url + (url.indexOf('?')<0?'?':'&') + 'api=live&_=' + Date.now();
+    if (mode === 'fetch') return viaFetch(base);
     var name = '__ov'+(++cbn), s = document.createElement('script'), done = false;
-    window[name] = function(d){ done = true; got(d); };
-    s.src = url + (url.indexOf('?')<0?'?':'&') + 'api=live&callback=' + name + '&_=' + Date.now();
-    s.onerror = function(){ fails++; if (q.debug){ msg.textContent = 'Overlay: no connection to the app ('+fails+')'; msg.style.display = 'block'; } };
-    s.onload = function(){ setTimeout(function(){ try{ delete window[name]; }catch(e){ window[name]=undefined; } if (s.parentNode) s.parentNode.removeChild(s); }, 100); };
+    window[name] = function(d){ done = true; status('OK (jsonp)', true); got(d); };
+    s.src = base + '&callback=' + name;
+    s.onerror = function(){ cleanup(); status('jsonp failed – trying fetch'); viaFetch(base); };
+    s.onload = function(){ setTimeout(function(){ if (!done){ status('jsonp: no data – trying fetch'); viaFetch(base); } cleanup(); }, 150); };
+    function cleanup(){ try{ delete window[name]; }catch(e){ window[name]=undefined; } if (s.parentNode) s.parentNode.removeChild(s); }
     document.head.appendChild(s);
+  }
+  function viaFetch(u){
+    if (!window.fetch){ fails++; return status('no fetch support ('+fails+')'); }
+    fetch(u, { method:'GET', redirect:'follow', cache:'no-store' })
+      .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
+      .then(function(t){ var d = JSON.parse(t); mode = 'fetch'; status('OK (fetch)', true); got(d); })
+      .catch(function(e){ fails++; mode = ''; status('no connection: '+(e && e.message || e)+' ('+fails+')'); });
+  }
+  function status(t, ok){
+    if (!q.debug) return;
+    msg.textContent = 'Overlay ' + new Date().toLocaleTimeString() + ' – ' + t;
+    msg.style.background = ok ? 'rgba(0,140,60,.85)' : 'rgba(200,0,0,.85)';
+    msg.style.display = 'block';
   }
   poll(); setInterval(poll, EVERY);
 })();
